@@ -1,0 +1,215 @@
+# AgentLocate 中文教程
+
+AgentLocate 是一个面向 AI Agent、LangChain、RPA、GUI 自动化和数据标注的视觉定位 SDK/框架。
+
+它做的事情是：用户传入图片或截图路径，以及自然语言描述，例如“登录按钮”“右上角设置图标”，AgentLocate 返回目标位置：
+
+- `bbox`: 目标框，格式为 `x1, y1, x2, y2`
+- `center`: 目标中心点
+- `click`: 推荐点击坐标
+- `codegen`: Playwright、DrissionPage、Appium、PyAutoGUI 点击代码
+
+重要说明：AgentLocate 是框架和 SDK，不是模型权重仓库。它不内置 LocateAnything-3B 或其他模型权重。你需要接入远程推理服务、本地模型后端，或者自己实现一个后端。
+
+## 安装
+
+从 GitHub 安装：
+
+```bash
+pip install git+https://github.com/YOUR_NAME/AgentLocate.git
+```
+
+本地开发安装：
+
+```bash
+git clone https://github.com/YOUR_NAME/AgentLocate.git
+cd AgentLocate
+pip install -e .
+```
+
+可选依赖：
+
+```bash
+pip install -e ".[server]"      # FastAPI 服务端
+pip install -e ".[langchain]"   # LangChain StructuredTool
+pip install -e ".[local]"       # Pillow 等本地图像工具
+```
+
+## 最小使用方式
+
+如果你已经有一个远程视觉定位服务，可以这样调用：
+
+```python
+from agent_locate import Locator
+
+locator = Locator(
+    backend="remote_api",
+    backend_kwargs={"endpoint": "http://localhost:8000/locate"},
+)
+
+response = locator.locate("screenshot.png", "登录按钮")
+
+print(response.result.bbox)
+print(response.result.center)
+print(response.result.click)
+print(response.codegen.playwright)
+```
+
+输出示例：
+
+```python
+BBox(x1=100, y1=200, x2=180, y2=240)
+(140, 220)
+(140, 220)
+await page.mouse.click(140, 220)
+```
+
+## remote_api 后端协议
+
+`remote_api` 是目前可以直接使用的通用后端。它会向你的远程服务发送 JSON：
+
+```json
+{
+  "image_path": "screenshot.png",
+  "query": "登录按钮",
+  "top_k": 1,
+  "context": null,
+  "metadata": {}
+}
+```
+
+你的服务需要返回：
+
+```json
+{
+  "bbox": {"x1": 100, "y1": 200, "x2": 180, "y2": 240},
+  "label": "登录按钮",
+  "confidence": 0.92,
+  "backend": "your-model"
+}
+```
+
+也可以返回：
+
+```json
+{
+  "result": {
+    "bbox": {"x1": 100, "y1": 200, "x2": 180, "y2": 240},
+    "label": "登录按钮",
+    "confidence": 0.92
+  }
+}
+```
+
+## 启动 FastAPI 服务
+
+安装服务端依赖：
+
+```bash
+pip install -e ".[server]"
+```
+
+启动服务：
+
+```bash
+uvicorn agent_locate.server:app --host 0.0.0.0 --port 8000
+```
+
+如果你希望这个服务转发到另一个远程推理服务：
+
+Windows PowerShell:
+
+```powershell
+$env:AGENT_LOCATE_BACKEND="remote_api"
+$env:AGENT_LOCATE_REMOTE_ENDPOINT="http://your-gpu-server/locate"
+uvicorn agent_locate.server:app --port 8000
+```
+
+Linux/macOS:
+
+```bash
+export AGENT_LOCATE_BACKEND=remote_api
+export AGENT_LOCATE_REMOTE_ENDPOINT=http://your-gpu-server/locate
+uvicorn agent_locate.server:app --port 8000
+```
+
+## LangChain 使用
+
+```python
+from agent_locate import Locator
+from agent_locate.integrations.langchain import create_langchain_tool
+
+locator = Locator(
+    "remote_api",
+    backend_kwargs={"endpoint": "http://localhost:8000/locate"},
+)
+
+tool = create_langchain_tool(locator)
+
+result = tool.invoke({
+    "image_path": "screenshot.png",
+    "query": "设置按钮",
+    "context": "用户想打开设置页"
+})
+
+print(result)
+```
+
+## DrissionPage 点击
+
+```python
+from DrissionPage import ChromiumPage
+from agent_locate import Locator
+
+page = ChromiumPage()
+page.get("https://example.com")
+
+screenshot_path = "page.png"
+page.get_screenshot(path=screenshot_path)
+
+locator = Locator(
+    "remote_api",
+    backend_kwargs={"endpoint": "http://localhost:8000/locate"},
+)
+response = locator.locate(screenshot_path, "More information 链接")
+
+x, y = response.result.click
+page.actions.click(x, y)
+```
+
+## 自定义后端
+
+如果你有自己的模型，只需要实现 `Backend`：
+
+```python
+from agent_locate.backends.base import Backend
+from agent_locate.schema import BBox, LocateRequest, LocateResult
+
+class MyBackend(Backend):
+    name = "my_backend"
+
+    def locate(self, request: LocateRequest) -> LocateResult:
+        # 在这里调用你的模型
+        return LocateResult(
+            bbox=BBox(x1=100, y1=200, x2=180, y2=240),
+            label=request.query,
+            confidence=0.9,
+            backend=self.name,
+        )
+```
+
+然后：
+
+```python
+from agent_locate import Locator
+
+locator = Locator(backend=MyBackend())
+response = locator.locate("screenshot.png", "登录按钮")
+```
+
+## LocateAnything-3B 说明
+
+AgentLocate 预留了 `LocateAnythingBackend`，用于接入 `nvidia/LocateAnything-3B` 本地推理。
+
+但是本项目不提供模型权重，不重新分发模型，也不改变模型许可证。LocateAnything-3B 的下载、使用、商用和分发规则，以 NVIDIA 官方仓库和官方许可证为准。
+

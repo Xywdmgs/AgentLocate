@@ -1,0 +1,52 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agent-locate"
+version = "0.1.0"
+description = "Natural-language visual grounding SDK for AI agents, RPA, GUI automation, and data annotation."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+authors = [{ name = "AgentLocate Contributors" }]
+keywords = ["visual-grounding", "ai-agent", "rpa", "gui-automation", "langchain", "bbox"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Typing :: Typed",
+]
+dependencies = [
+  "httpx>=0.25",
+  "pydantic>=2.5",
+]
+
+[project.optional-dependencies]
+server = ["fastapi>=0.110", "uvicorn[standard]>=0.27"]
+langchain = ["langchain-core>=0.2"]
+local = ["pillow>=10"]
+dev = ["pytest>=8", "ruff>=0.5"]
+
+[project.urls]
+Homepage = "https://github.com/agent-locate/agent-locate"
+Repository = "https://github.com/agent-locate/agent-locate"
+Documentation = "https://github.com/agent-locate/agent-locate/tree/main/docs"
+Issues = "https://github.com/agent-locate/agent-locate/issues"
+
+[project.scripts]
+agent-locate-server = "agent_locate.server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["agent_locate"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
