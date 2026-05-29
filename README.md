@@ -78,6 +78,17 @@ Run the included example:
 python examples/basic_locate.py
 ```
 
+## Which Backend Should I Use?
+
+| Backend | Needs model weights | Needs GPU | Real localization | Best for |
+| --- | --- | --- | --- | --- |
+| `mock` | No | No | No | Installation checks, tutorials, CI |
+| `remote_api` | On the server only | On the server only | Yes | Users without local GPU, production services |
+| `locateanything` | Yes | No, but GPU recommended | Yes | Local research and CPU/GPU smoke tests |
+| custom `Backend` | Depends | Depends | Depends | Your own model or hosted inference stack |
+
+Start with `mock`, then switch to `remote_api` or `locateanything` when you are ready to run real visual grounding.
+
 ## How Users Should Think About This Project
 
 AgentLocate provides the stable SDK layer:
