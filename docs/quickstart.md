@@ -2,12 +2,14 @@
 
 AgentLocate exposes one main SDK class: `Locator`.
 
+The quickest way to verify installation is the `mock` backend. It returns a fixed bbox and does not perform real visual grounding.
+
 ```python
 from agent_locate import Locator
 
 locator = Locator(
-    backend="remote_api",
-    backend_kwargs={"endpoint": "http://localhost:8000/locate"},
+    backend="mock",
+    backend_kwargs={"bbox": [100, 120, 260, 200]},
 )
 
 response = locator.locate("screenshot.png", "the submit button")
@@ -16,6 +18,8 @@ print(response.result.click)
 ```
 
 The local `LocateAnythingBackend` is intentionally an adapter stub. It does not download or include `nvidia/LocateAnything-3B` weights.
+
+For real localization, switch to `remote_api`, a local LocateAnything-3B adapter, or a custom backend.
 
 ## Run Tests
 
@@ -29,4 +33,3 @@ python -m unittest discover -s tests
 pip install -e ".[server]"
 uvicorn agent_locate.server:app --port 8000
 ```
-

@@ -22,8 +22,12 @@ def image_to_base64(image_path: str | Path) -> str:
 
 def image_to_data_url(image_path: str | Path) -> str:
     path = ensure_image_exists(image_path)
-    mime_type = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
-    return f"data:{mime_type};base64,{image_to_base64(path)}"
+    return f"data:{image_mime_type(path)};base64,{image_to_base64(path)}"
+
+
+def image_mime_type(image_path: str | Path) -> str:
+    path = Path(image_path)
+    return mimetypes.guess_type(path.name)[0] or "application/octet-stream"
 
 
 def get_image_size(image_path: str | Path) -> Tuple[int, int]:
@@ -35,4 +39,3 @@ def get_image_size(image_path: str | Path) -> Tuple[int, int]:
     path = ensure_image_exists(image_path)
     with Image.open(path) as image:
         return image.size
-

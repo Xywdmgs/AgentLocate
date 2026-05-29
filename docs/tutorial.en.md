@@ -16,13 +16,13 @@ Important: AgentLocate is a framework and SDK, not a model weight repository. It
 Install from GitHub:
 
 ```bash
-pip install git+https://github.com/YOUR_NAME/AgentLocate.git
+pip install git+https://github.com/Xywdmgs/AgentLocate.git
 ```
 
 Install for local development:
 
 ```bash
-git clone https://github.com/YOUR_NAME/AgentLocate.git
+git clone https://github.com/Xywdmgs/AgentLocate.git
 cd AgentLocate
 pip install -e .
 ```
@@ -35,7 +35,34 @@ pip install -e ".[langchain]"   # LangChain StructuredTool
 pip install -e ".[local]"       # Pillow and local image utilities
 ```
 
-## Minimal Usage
+## 5-Minute Smoke Test Without A Model
+
+AgentLocate includes a `mock` backend for testing installation, imports, schemas, click code generation, LangChain wiring, and the FastAPI route.
+
+Important: `mock` does not perform real visual grounding. It returns a fixed bbox. For real localization, switch to `remote_api`, a local LocateAnything-3B adapter, or your own Backend.
+
+```python
+from agent_locate import Locator
+
+locator = Locator(
+    backend="mock",
+    backend_kwargs={"bbox": [100, 120, 260, 200]},
+)
+
+response = locator.locate("screenshot.png", "the login button")
+
+print(response.result.bbox)
+print(response.result.click)
+print(response.codegen.playwright)
+```
+
+Run the included example:
+
+```bash
+python examples/basic_locate.py
+```
+
+## Connect Real Inference
 
 If you already have a visual localization service, use the `remote_api` backend:
 
@@ -78,6 +105,23 @@ The `remote_api` backend sends this JSON payload to your remote service:
 }
 ```
 
+If the remote service cannot read your local image path, ask the SDK to send the image content:
+
+```python
+locator = Locator(
+    "remote_api",
+    backend_kwargs={
+        "endpoint": "http://your-gpu-server/locate",
+        "include_image": True,
+    },
+)
+```
+
+The request metadata then includes:
+
+- `image_base64`
+- `image_mime_type`
+
 Your service should return:
 
 ```json
@@ -114,6 +158,8 @@ Run the server:
 ```bash
 uvicorn agent_locate.server:app --host 0.0.0.0 --port 8000
 ```
+
+By default, the server uses `mock`, so the route is runnable immediately after installing server dependencies. Set `AGENT_LOCATE_BACKEND=remote_api` or `AGENT_LOCATE_BACKEND=locateanything` for real inference.
 
 To run a proxy server that forwards requests to another inference endpoint:
 
@@ -212,4 +258,3 @@ response = locator.locate("screenshot.png", "the login button")
 AgentLocate includes a `LocateAnythingBackend` adapter placeholder for local `nvidia/LocateAnything-3B` inference.
 
 This project does not provide model weights, redistribute model files, or modify model licensing. Download, usage, commercial use, and redistribution of LocateAnything-3B are governed by NVIDIA's official repository and license.
-

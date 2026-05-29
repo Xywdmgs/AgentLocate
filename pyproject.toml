@@ -36,10 +36,10 @@ local = ["pillow>=10"]
 dev = ["pytest>=8", "ruff>=0.5"]
 
 [project.urls]
-Homepage = "https://github.com/agent-locate/agent-locate"
-Repository = "https://github.com/agent-locate/agent-locate"
-Documentation = "https://github.com/agent-locate/agent-locate/tree/main/docs"
-Issues = "https://github.com/agent-locate/agent-locate/issues"
+Homepage = "https://github.com/Xywdmgs/AgentLocate"
+Repository = "https://github.com/Xywdmgs/AgentLocate"
+Documentation = "https://github.com/Xywdmgs/AgentLocate/tree/main/docs"
+Issues = "https://github.com/Xywdmgs/AgentLocate/issues"
 
 [project.scripts]
 agent-locate-server = "agent_locate.server:main"

@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional, Union
 
 from agent_locate.backends.base import Backend
 from agent_locate.backends.locateanything import LocateAnythingBackend
+from agent_locate.backends.mock import MockBackend
 from agent_locate.backends.remote_api import RemoteAPIBackend
 from agent_locate.codegen import generate_click_code
 from agent_locate.image_utils import ensure_image_exists
@@ -55,8 +56,9 @@ class Locator:
 
         if backend == "remote_api":
             return RemoteAPIBackend(**kwargs)
+        if backend in {"mock", "demo", "test"}:
+            return MockBackend(**kwargs)
         if backend in {"locateanything", "locateanything-3b", "local"}:
             return LocateAnythingBackend(**kwargs)
 
         raise ValueError(f"unknown backend: {backend}")
-

@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional
 import httpx
 
 from agent_locate.backends.base import Backend
+from agent_locate.image_utils import image_to_base64, image_mime_type
 from agent_locate.schema import BBox, LocateRequest, LocateResult
 
 
@@ -25,11 +26,13 @@ class RemoteAPIBackend(Backend):
         api_key: Optional[str] = None,
         timeout: float = 60.0,
         headers: Optional[Dict[str, str]] = None,
+        include_image: bool = False,
     ) -> None:
         self.endpoint = endpoint
         self.api_key = api_key
         self.timeout = timeout
         self.headers = headers or {}
+        self.include_image = include_image
 
     def locate(self, request: LocateRequest) -> LocateResult:
         headers = dict(self.headers)
@@ -37,6 +40,11 @@ class RemoteAPIBackend(Backend):
             headers.setdefault("Authorization", f"Bearer {self.api_key}")
 
         payload = request.model_dump()
+        if self.include_image:
+            metadata = dict(payload.get("metadata") or {})
+            metadata["image_base64"] = image_to_base64(request.image_path)
+            metadata["image_mime_type"] = image_mime_type(request.image_path)
+            payload["metadata"] = metadata
         with httpx.Client(timeout=self.timeout) as client:
             response = client.post(self.endpoint, json=payload, headers=headers)
             response.raise_for_status()
@@ -57,4 +65,3 @@ class RemoteAPIBackend(Backend):
             backend=data.get("backend") or self.name,
             raw=data,
         )
-

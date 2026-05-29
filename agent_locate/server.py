@@ -41,7 +41,7 @@ def create_app():
 
 
 def _locator_from_env() -> Locator:
-    backend = os.getenv("AGENT_LOCATE_BACKEND", "locateanything")
+    backend = os.getenv("AGENT_LOCATE_BACKEND", "mock")
     kwargs: Dict[str, Any] = {}
     if backend == "remote_api":
         endpoint = os.getenv("AGENT_LOCATE_REMOTE_ENDPOINT")
@@ -50,6 +50,14 @@ def _locator_from_env() -> Locator:
         kwargs["endpoint"] = endpoint
         if os.getenv("AGENT_LOCATE_API_KEY"):
             kwargs["api_key"] = os.getenv("AGENT_LOCATE_API_KEY")
+        kwargs["include_image"] = os.getenv("AGENT_LOCATE_INCLUDE_IMAGE", "").lower() in {
+            "1",
+            "true",
+            "yes",
+        }
+    elif backend in {"mock", "demo", "test"}:
+        if os.getenv("AGENT_LOCATE_MOCK_BBOX"):
+            kwargs["bbox"] = [float(part) for part in os.getenv("AGENT_LOCATE_MOCK_BBOX", "").split(",")]
     elif backend in {"locateanything", "locateanything-3b", "local"}:
         if os.getenv("AGENT_LOCATE_MODEL_PATH"):
             kwargs["model_path"] = os.getenv("AGENT_LOCATE_MODEL_PATH")
@@ -57,7 +65,10 @@ def _locator_from_env() -> Locator:
     return Locator(backend=backend, backend_kwargs=kwargs, validate_images=False)
 
 
-app = create_app()
+try:
+    app = create_app()
+except ImportError:
+    app = None
 
 
 def main() -> None:
@@ -67,4 +78,3 @@ def main() -> None:
         raise ImportError("Install agent-locate[server] to run the server CLI.") from exc
 
     uvicorn.run("agent_locate.server:app", host="0.0.0.0", port=int(os.getenv("PORT", "8000")))
-

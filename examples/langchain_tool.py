@@ -4,8 +4,8 @@ from agent_locate.integrations.langchain import create_langchain_tool
 
 def main() -> None:
     locator = Locator(
-        backend="remote_api",
-        backend_kwargs={"endpoint": "http://localhost:8000/locate"},
+        backend="mock",
+        backend_kwargs={"bbox": [40, 60, 120, 140]},
     )
     tool = create_langchain_tool(locator)
 
@@ -21,4 +21,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

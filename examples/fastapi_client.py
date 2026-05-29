@@ -3,7 +3,7 @@ import httpx
 
 def main() -> None:
     payload = {
-        "image_path": "tests/fixtures/screenshot.png",
+        "image_path": "screenshot.png",
         "query": "the primary action button",
         "top_k": 1,
         "context": None,
@@ -17,4 +17,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

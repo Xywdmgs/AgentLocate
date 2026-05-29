@@ -1,6 +1,6 @@
 # AgentLocate
 
-[![CI](https://github.com/agent-locate/agent-locate/actions/workflows/ci.yml/badge.svg)](https://github.com/agent-locate/agent-locate/actions/workflows/ci.yml)
+[![CI](https://github.com/Xywdmgs/AgentLocate/actions/workflows/ci.yml/badge.svg)](https://github.com/Xywdmgs/AgentLocate/actions/workflows/ci.yml)
 
 AgentLocate is an open-source Python SDK/framework for natural-language visual localization. It is built for AI Agents, LangChain tools, RPA workflows, GUI automation, and data annotation pipelines.
 
@@ -33,7 +33,7 @@ pip install agent-locate
 From GitHub before release:
 
 ```bash
-pip install git+https://github.com/YOUR_NAME/AgentLocate.git
+pip install git+https://github.com/Xywdmgs/AgentLocate.git
 ```
 
 For local development:
@@ -52,12 +52,14 @@ pip install -e ".[local]"
 
 ## Basic Usage
 
+This smoke-test path works immediately after installation. It uses `mock`, a deterministic backend for testing the SDK pipeline. It does not perform real visual grounding.
+
 ```python
 from agent_locate import Locator
 
 locator = Locator(
-    backend="remote_api",
-    backend_kwargs={"endpoint": "https://your-gpu-host.example.com/locate"},
+    backend="mock",
+    backend_kwargs={"bbox": [100, 120, 260, 200]},
 )
 
 response = locator.locate("screenshot.png", "the blue submit button")
@@ -68,6 +70,12 @@ print(response.codegen.playwright)
 ```
 
 Users import the Python package as `agent_locate`. The distributable package name is `agent-locate`.
+
+Run the included example:
+
+```bash
+python examples/basic_locate.py
+```
 
 ## How Users Should Think About This Project
 
@@ -112,6 +120,26 @@ It should return either a raw result:
 
 or `{ "result": { ... } }`.
 
+If your remote service cannot read local file paths, send the image content in the request metadata:
+
+```python
+locator = Locator(
+    "remote_api",
+    backend_kwargs={
+        "endpoint": "https://your-gpu-host.example.com/locate",
+        "include_image": True,
+    },
+)
+```
+
+Then the request metadata includes `image_base64` and `image_mime_type`.
+
+### `mock`
+
+`MockBackend` is included so users can test installation, imports, schemas, generated click code, LangChain wiring, and the FastAPI route without downloading a model.
+
+It always returns a fixed bbox. Do not use it as a real locator.
+
 ### `locateanything`
 
 `LocateAnythingBackend` is a local integration stub for `nvidia/LocateAnything-3B`. It is intentionally written as an adapter class with TODO markers where the official model loading and inference pipeline should be connected.
@@ -122,6 +150,8 @@ or `{ "result": { ... } }`.
 pip install -e ".[server]"
 uvicorn agent_locate.server:app --host 0.0.0.0 --port 8000
 ```
+
+By default, the server uses `mock`, so this command is runnable immediately. Set `AGENT_LOCATE_BACKEND=remote_api` or `AGENT_LOCATE_BACKEND=locateanything` for real inference.
 
 For a proxy server that calls a remote inference endpoint:
 
