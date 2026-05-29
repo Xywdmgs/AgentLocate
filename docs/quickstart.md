@@ -21,6 +21,17 @@ The local `LocateAnythingBackend` is intentionally an adapter stub. It does not 
 
 For real localization, switch to `remote_api`, a local LocateAnything-3B adapter, or a custom backend.
 
+## Local LocateAnything-3B CPU Smoke Test
+
+After downloading `nvidia/LocateAnything-3B` to `D:\models\LocateAnything-3B`, run:
+
+```bash
+pip install -e ".[locateanything]"
+python examples/local_locateanything_cpu.py
+```
+
+CPU inference is intended for validation, not speed.
+
 ## Run Tests
 
 ```bash

@@ -33,6 +33,7 @@ pip install -e .
 pip install -e ".[server]"      # FastAPI 服务端
 pip install -e ".[langchain]"   # LangChain StructuredTool
 pip install -e ".[local]"       # Pillow 等本地图像工具
+pip install -e ".[locateanything]"  # 本地 LocateAnything-3B 推理依赖
 ```
 
 ## 5 分钟自测：不需要模型也能跑通
@@ -255,6 +256,38 @@ response = locator.locate("screenshot.png", "登录按钮")
 
 ## LocateAnything-3B 说明
 
-AgentLocate 预留了 `LocateAnythingBackend`，用于接入 `nvidia/LocateAnything-3B` 本地推理。
+AgentLocate 已经提供 `LocateAnythingBackend`，用于接入本地 `nvidia/LocateAnything-3B`。
 
 但是本项目不提供模型权重，不重新分发模型，也不改变模型许可证。LocateAnything-3B 的下载、使用、商用和分发规则，以 NVIDIA 官方仓库和官方许可证为准。
+
+CPU 跑通示例：
+
+```python
+from agent_locate import Locator
+
+locator = Locator(
+    "locateanything",
+    backend_kwargs={
+        "model_path": r"D:\models\LocateAnything-3B",
+        "device": "cpu",
+        "dtype": "float32",
+        "generation_mode": "slow",
+        "max_new_tokens": 128,
+        "temperature": 0.0,
+        "do_sample": False,
+    },
+)
+
+response = locator.locate("screenshot.png", "登录按钮")
+print(response.result.bbox)
+print(response.result.click)
+print(response.codegen.pyautogui)
+```
+
+也可以直接运行仓库里的 CPU 示例：
+
+```bash
+python examples/local_locateanything_cpu.py
+```
+
+CPU 可以跑通，但会比 GPU 慢很多。生产环境建议把模型部署在 GPU 机器上，然后通过 `remote_api` 调用。

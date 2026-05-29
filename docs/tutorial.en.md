@@ -33,6 +33,7 @@ Optional extras:
 pip install -e ".[server]"      # FastAPI server
 pip install -e ".[langchain]"   # LangChain StructuredTool
 pip install -e ".[local]"       # Pillow and local image utilities
+pip install -e ".[locateanything]"  # Local LocateAnything-3B inference dependencies
 ```
 
 ## 5-Minute Smoke Test Without A Model
@@ -255,6 +256,38 @@ response = locator.locate("screenshot.png", "the login button")
 
 ## LocateAnything-3B Note
 
-AgentLocate includes a `LocateAnythingBackend` adapter placeholder for local `nvidia/LocateAnything-3B` inference.
+AgentLocate includes `LocateAnythingBackend` for local `nvidia/LocateAnything-3B` inference.
 
 This project does not provide model weights, redistribute model files, or modify model licensing. Download, usage, commercial use, and redistribution of LocateAnything-3B are governed by NVIDIA's official repository and license.
+
+CPU smoke test:
+
+```python
+from agent_locate import Locator
+
+locator = Locator(
+    "locateanything",
+    backend_kwargs={
+        "model_path": r"D:\models\LocateAnything-3B",
+        "device": "cpu",
+        "dtype": "float32",
+        "generation_mode": "slow",
+        "max_new_tokens": 128,
+        "temperature": 0.0,
+        "do_sample": False,
+    },
+)
+
+response = locator.locate("screenshot.png", "the login button")
+print(response.result.bbox)
+print(response.result.click)
+print(response.codegen.pyautogui)
+```
+
+You can also run the included CPU example:
+
+```bash
+python examples/local_locateanything_cpu.py
+```
+
+CPU inference works for smoke testing, but it is much slower than GPU inference. For production, run the model on a GPU host and call it through `remote_api`.

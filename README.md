@@ -48,6 +48,7 @@ Optional extras:
 pip install -e ".[server]"
 pip install -e ".[langchain]"
 pip install -e ".[local]"
+pip install -e ".[locateanything]"
 ```
 
 ## Basic Usage
@@ -142,7 +143,31 @@ It always returns a fixed bbox. Do not use it as a real locator.
 
 ### `locateanything`
 
-`LocateAnythingBackend` is a local integration stub for `nvidia/LocateAnything-3B`. It is intentionally written as an adapter class with TODO markers where the official model loading and inference pipeline should be connected.
+`LocateAnythingBackend` can run a local `nvidia/LocateAnything-3B` checkout through Transformers. AgentLocate still does not include model weights.
+
+CPU smoke test after downloading the model:
+
+```python
+from agent_locate import Locator
+
+locator = Locator(
+    "locateanything",
+    backend_kwargs={
+        "model_path": r"D:\models\LocateAnything-3B",
+        "device": "cpu",
+        "dtype": "float32",
+        "generation_mode": "slow",
+        "max_new_tokens": 128,
+        "do_sample": False,
+    },
+)
+
+response = locator.locate("screenshot.png", "the login button")
+print(response.result.bbox)
+print(response.result.click)
+```
+
+On CPU this can be slow. For production use, run the model on a GPU machine and expose it through `remote_api`.
 
 ## FastAPI Server
 
@@ -174,6 +199,7 @@ tool = create_langchain_tool(locator)
 ## Examples
 
 - `examples/basic_locate.py`
+- `examples/local_locateanything_cpu.py`
 - `examples/langchain_tool.py`
 - `examples/fastapi_client.py`
 - `examples/drissionpage_click.py`

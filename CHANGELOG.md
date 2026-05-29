@@ -6,6 +6,8 @@
 - Made the FastAPI server default to the mock backend so new users can test the route immediately.
 - Added optional `remote_api` image payload support through `include_image=True`.
 - Updated examples and bilingual tutorials with a runnable first path.
+- Implemented local `LocateAnythingBackend` parsing and Transformers worker support.
+- Added a CPU smoke-test example for a local `nvidia/LocateAnything-3B` checkout.
 
 ## 0.1.0
 

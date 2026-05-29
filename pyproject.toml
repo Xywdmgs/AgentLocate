@@ -33,6 +33,17 @@ dependencies = [
 server = ["fastapi>=0.110", "uvicorn[standard]>=0.27"]
 langchain = ["langchain-core>=0.2"]
 local = ["pillow>=10"]
+locateanything = [
+  "accelerate>=1.13",
+  "decord>=0.6",
+  "lmdb>=1.7",
+  "opencv-python-headless>=4.11",
+  "peft>=0.19",
+  "pillow>=11.1",
+  "torch>=2.6",
+  "torchvision>=0.21",
+  "transformers>=4.57.1",
+]
 dev = ["pytest>=8", "ruff>=0.5"]
 
 [project.urls]

@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 from agent_locate.backends.mock import MockBackend
 from agent_locate.backends.base import Backend
+from agent_locate.backends.locateanything import LocateAnythingBackend, parse_locateanything_output
 from agent_locate.backends.remote_api import RemoteAPIBackend
 from agent_locate.locator import Locator
 from agent_locate.server import _locator_from_env
@@ -62,6 +63,65 @@ class CoreTests(unittest.TestCase):
         self.assertEqual(response.result.backend, "mock")
         self.assertEqual(response.result.label, "demo button")
         self.assertEqual(response.result.click, (25, 30))
+
+    def test_parse_locateanything_box_output_scales_to_pixels(self):
+        result = parse_locateanything_output(
+            "target <box><100><200><500><800></box>",
+            image_width=1000,
+            image_height=500,
+            label="button",
+        )
+
+        self.assertEqual(result.bbox.x1, 100)
+        self.assertEqual(result.bbox.y1, 100)
+        self.assertEqual(result.bbox.x2, 500)
+        self.assertEqual(result.bbox.y2, 400)
+        self.assertEqual(result.label, "button")
+
+    def test_parse_locateanything_point_output_creates_small_click_box(self):
+        result = parse_locateanything_output(
+            "<box><500><250></box>",
+            image_width=200,
+            image_height=100,
+            label="search icon",
+            point_box_size=10,
+        )
+
+        self.assertEqual(result.click, (100, 25))
+        self.assertEqual(result.bbox.x1, 95)
+        self.assertEqual(result.bbox.y1, 20)
+        self.assertEqual(result.bbox.x2, 105)
+        self.assertEqual(result.bbox.y2, 30)
+
+    def test_parse_locateanything_output_rejects_missing_coordinates(self):
+        with self.assertRaises(ValueError):
+            parse_locateanything_output("no box here", image_width=100, image_height=100)
+
+    def test_locateanything_backend_uses_injected_worker_without_loading_model(self):
+        class FakeWorker:
+            def ground_gui(self, image, phrase, output_type="box", **kwargs):
+                self.image_size = image.size
+                self.phrase = phrase
+                self.output_type = output_type
+                return {"answer": "<box><100><200><500><800></box>"}
+
+        image_path = Path("tests") / "fake_image.png"
+        try:
+            from PIL import Image
+        except ImportError:
+            self.skipTest("Pillow is required for this test")
+        Image.new("RGB", (100, 50), color="white").save(image_path)
+        self.addCleanup(lambda: image_path.unlink(missing_ok=True))
+
+        worker = FakeWorker()
+        backend = LocateAnythingBackend(model=worker)
+
+        result = backend.locate(LocateRequest(image_path=image_path, query="login button"))
+
+        self.assertEqual(worker.image_size, (100, 50))
+        self.assertEqual(worker.phrase, "login button")
+        self.assertEqual(worker.output_type, "box")
+        self.assertEqual(result.click, (30, 25))
 
     def test_server_defaults_to_mock_backend_for_smoke_testing(self):
         with patch.dict(os.environ, {}, clear=True):
